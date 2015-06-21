@@ -1,0 +1,61 @@
+apply plugin: 'java'
+//IntelliJ IDEA 插件
+apply plugin: 'idea'
+//war包插件
+apply plugin: 'war'
+
+sourceCompatibility = 1.6
+version = '1.0'
+
+webAppDirName = 'src/main/webapp'
+sourceSets.main.java.srcDir 'src/main/java'
+
+repositories {
+    mavenCentral()
+    //    使用开源中国的maven仓库
+    //maven { url 'http://maven.oschina.net/content/groups/public/' }
+}
+
+dependencies {
+    providedCompile (
+        "javax.servlet:javax.servlet-api:3.1.0",
+        "org.apache.tomcat:tomcat-websocket:8.0.23",
+        "org.apache.tomcat:tomcat-websocket-api:8.0.23"
+    )
+    compile (
+        "com.google.code.gson:gson:2.3",
+        "mysql:mysql-connector-java:5.1.33",
+        "org.mybatis:mybatis:3.2.8",
+        "org.mybatis:mybatis-spring:1.2.2",
+
+        "org.springframework:spring-core:4.1.1.RELEASE",
+        "org.springframework:spring-tx:4.1.1.RELEASE",
+        "org.springframework:spring-jdbc:4.1.1.RELEASE",
+        "org.springframework:spring-context:4.1.1.RELEASE",
+        "org.springframework:spring-beans:4.1.1.RELEASE",
+        "org.springframework:spring-web:4.1.1.RELEASE",
+        "org.springframework:spring-aop:4.1.1.RELEASE",
+        "org.springframework:spring-expression:4.1.1.RELEASE",
+        "org.aspectj:aspectjrt:1.8.3",
+        "org.aspectj:aspectjweaver:1.8.3",
+        //"org.apache.commons:commons-dbcp2:2.0.1",
+        "commons-dbcp:commons-dbcp:20030825.184428",
+        "commons-pool:commons-pool:20030825.183949",
+
+        "org.apache.struts:struts2-spring-plugin:2.3.16.3",
+        "org.apache.struts:struts2-core:2.3.16.3",
+        "org.apache.struts:struts2-convention-plugin:2.3.16.3",
+        "org.apache.struts:struts2-json-plugin:2.3.16.3",
+
+        "org.apache.logging.log4j:log4j:2.1",
+        "org.slf4j:slf4j-api:1.7.7",
+        "org.slf4j:slf4j-log4j12:1.7.7",
+
+        "com.jgeppert.struts2.jquery:struts2-jquery:3.7.1",
+        "com.jgeppert.struts2.jquery:struts2-jquery-plugin:3.7.1",
+        "com.jgeppert.struts2.jquery:struts2-jquery-grid-plugin:3.7.1",
+        "com.jgeppert.struts2.jquery:struts2-jquery-tree-plugin:3.7.1",
+        "com.jgeppert.struts2.jquery:struts2-jquery-chart-plugin:3.7.1",
+        "com.jgeppert.struts2.jquery:struts2-jquery-mobile-plugin:3.7.1"
+    )
+}

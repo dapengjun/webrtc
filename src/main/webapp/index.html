@@ -4,17 +4,34 @@
     <meta charset="UTF-8">
     <title></title>
     <script>
-        var ws = new WebSocket("ws://localhost");
-        ws.onopen = function(){ws.send("Test!");};
+        var ws = new WebSocket("ws://localhost:8080/ws/chat/alice");
+        ws.onopen = function(){
+            ws.send("Test!");
+            var text = document.getElementById("text");
+            text.innerText = "open";
+        };
 
-        ws.onmessage = function(evt){console.log(evt.data);ws.close();};
+        ws.onmessage = function(evt){
+            console.log(evt.data);
+            ws.close();
+            var text = document.getElementById("text");
+            text.innerText = evt.data;
+        };
 
-        ws.onclose = function(evt){console.log("WebSocketClosed!");};
+        ws.onclose = function(evt){
+            console.log("WebSocketClosed!");
+//            var text = document.getElementById("text");
+//            text.innerText = "close";
+        };
 
-        ws.onerror = function(evt){console.log("WebSocketError!");};
+        ws.onerror = function(evt){
+            console.log("WebSocketError!");
+//            var text = document.getElementById("text");
+//            text.innerText = "error";
+        };
     </script>
 </head>
 <body>
-
+<div id="text">1</div>
 </body>
 </html>

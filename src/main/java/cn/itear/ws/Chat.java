@@ -44,9 +44,8 @@ public class Chat {
         this.nickName = nickName;
 
         connections.add(this);
-        String message = String.format("System> %s %s", this.nickName,
-                " has joined.");
-        Chat.broadCast(message);
+//        String message = String.format("System> %s %s", this.nickName, " has joined.");
+//        Chat.broadCast(message);
     }
 
     /**
@@ -55,9 +54,8 @@ public class Chat {
     @OnClose
     public void onClose() {
         connections.remove(this);
-        String message = String.format("System> %s, %s", this.nickName,
-                " has disconnection.");
-        Chat.broadCast(message);
+//        String message = String.format("System> %s, %s", this.nickName, " has disconnection.");
+//        Chat.broadCast(message);
     }
 
     /**
@@ -69,7 +67,7 @@ public class Chat {
     @OnMessage
     public void onMessage(String message,
                           @PathParam(value = "nickName") String nickName) {
-        Chat.broadCast(nickName + ">" + message);
+        Chat.broadCast(message,nickName);
     }
 
     /**
@@ -87,11 +85,14 @@ public class Chat {
      *
      * @param message
      */
-    private static void broadCast(String message) {
+    private static void broadCast(String message,String nickName) {
         for (Chat chat : connections) {
             try {
                 synchronized (chat) {
-                    chat.session.getBasicRemote().sendText(message);
+                    if (!nickName.equals(chat.nickName))
+                    {
+                        chat.session.getBasicRemote().sendText(message);
+                    }
                 }
             } catch (IOException e) {
                 connections.remove(chat);
@@ -100,7 +101,7 @@ public class Chat {
                 } catch (IOException e1) {
                 }
                 Chat.broadCast(String.format("System> %s %s", chat.nickName,
-                        " has bean disconnection."));
+                        " has bean disconnection."),chat.nickName);
             }
         }
     }

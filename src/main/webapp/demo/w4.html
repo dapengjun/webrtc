@@ -1,15 +1,48 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
+<head>
     <meta charset="UTF-8">
     <title></title>
+
+    <script type="text/javascript" language="javascript" src="/common/adapter.js"></script>
     <script>
-        var signalingChannel = new SignalingChannel();
-        var configuration = { "iceServers": [{ "url": "stun:stun.example.org" }] };
+        var signalingChannel;
         var pc;
+        var selfView;
+        var remoteView;
+
+        function load()
+        {
+            selfView = document.getElementById("local");
+            remoteView = document.getElementById("remote");
+
+            var btn = document.getElementById('run');
+            btn.onclick = start;
+            var btnSignal = document.getElementById('start');
+            btnSignal.onclick = startSignal;
+        }
+
+        function startSignal()
+        {
+            var nickName = document.getElementById("nick");
+            signalingChannel = new WebSocket("ws://localhost:8080/ws/chat/"+nickName.value);
+            signalingChannel.onopen = function(){
+                console.log("WebSocketOpen!");
+            };
+
+            signalingChannel.onclose = function(evt){
+                console.log("WebSocketClosed!");
+            };
+
+            signalingChannel.onerror = function(evt){
+                console.log("WebSocketError!");
+            };
+            signalingChannel.onmessage = incoming;
+        }
 
         // call start() to initiate
         function start() {
+            var configuration = { "iceServers": [{ "url": "stun:192.168.56.101" }] };
             pc = new RTCPeerConnection(configuration);
 
             // send any ice candidates to the other peer
@@ -22,27 +55,43 @@
             pc.onnegotiationneeded = function () {
                 pc.createOffer().then(function (offer) {
                     return pc.setLocalDescription(offer);
-                })
-                        .then(function () {
-                            // send the offer to the other peer
-                            signalingChannel.send(JSON.stringify({ "sdp": pc.localDescription }));
-                        })
-                        .catch(logError);
+                }).then(function () {
+                    // send the offer to the other peer
+                    signalingChannel.send(JSON.stringify({ "sdp": pc.localDescription }));
+                }).catch(logError);
             };
 
             // once remote stream arrives, show it in the remote video element
             pc.onaddstream = function (evt) {
-                remoteView.srcObject = evt.stream;
-            };
+                if (window.URL) {
+                    remoteView.src = window.URL.createObjectURL(evt.stream);
+                } else {
+                    remoteView.src = evt.stream;
+                }
 
+                remoteView.autoplay = true;
+            };
             // get a local stream, show it in a self-view and add it to be sent
-            navigator.mediaDevices.getUserMedia({ "audio": true, "video": true }, function (stream) {
-                selfView.srcObject = stream;
-                pc.addStream(stream);
-            }, logError);
+            navigator.getUserMedia({
+                'video': true,
+                'audio': true
+            }, mediaSuccess, logError);
         }
 
-        signalingChannel.onmessage = function (evt) {
+        function mediaSuccess(stream)
+        {
+//            selfView.srcObject = stream;
+            if (window.URL) {
+                selfView.src = window.URL.createObjectURL(stream);
+            } else {
+                selfView.src = stream;
+            }
+
+            selfView.autoplay = true;
+            pc.addStream(stream);
+        }
+
+        function incoming(evt) {
             if (!pc)
                 start();
 
@@ -69,11 +118,16 @@
         };
 
         function logError(error) {
+            alert(error);
             log(error.name + ": " + error.message);
         }
     </script>
 </head>
-<body>
-
+<body onload="load()">
+    <input type="text" id="nick">
+    <button id="start">startSignal</button>
+    <button id="run">start</button><br/>
+    <video id="remote"></video><br/>
+    <video id="local"></video>
 </body>
 </html>

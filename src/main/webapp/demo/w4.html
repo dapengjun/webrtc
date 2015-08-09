@@ -14,6 +14,7 @@
         var remoteSdpDiv;
         var iceDiv;
         var isCaller = true;
+        var offer;
 
         function load()
         {
@@ -50,7 +51,7 @@
         // call start() to initiate
         function start() {
             var configuration = { "iceServers": [{ "url": "stun:192.168.1.102" }] };
-            pc = new RTCPeerConnection(configuration);
+            pc = new RTCPeerConnection(null);
 
             // send any ice candidates to the other peer
             pc.onicecandidate = function (evt) {
@@ -104,6 +105,25 @@
 
             selfView.autoplay = true;
             pc.addStream(stream);
+            if (!isCaller)
+            {
+                setOffer();
+            }
+        }
+
+        function setOffer() {
+            pc.setRemoteDescription(offer).then(function () {
+                return pc.createAnswer();
+            })
+                    .then(function (answer) {
+                        return pc.setLocalDescription(answer);
+                    })
+                    .then(function () {
+                        var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
+                        localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
+                        signalingChannel.send(wsLocalSdp);
+                    })
+                    .catch(logError);
         }
 
         function incoming(evt) {
@@ -119,18 +139,7 @@
 
                 // if we get an offer, we need to reply with an answer
                 if (desc.type == "offer") {
-                    pc.setRemoteDescription(desc).then(function () {
-                                return pc.createAnswer();
-                            })
-                            .then(function (answer) {
-                                return pc.setLocalDescription(answer);
-                            })
-                            .then(function () {
-                                var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
-                                localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
-                                signalingChannel.send(wsLocalSdp);
-                            })
-                            .catch(logError);
+                    offer = desc;
                 } else {
                     pc.setRemoteDescription(desc).catch(logError);
                 }

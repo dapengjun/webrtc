@@ -115,15 +115,15 @@
             pc.setRemoteDescription(offer).then(function () {
                 return pc.createAnswer();
             })
-                    .then(function (answer) {
-                        return pc.setLocalDescription(answer);
-                    })
-                    .then(function () {
-                        var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
-                        localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
-                        signalingChannel.send(wsLocalSdp);
-                    })
-                    .catch(logError);
+            .then(function (answer) {
+                return pc.setLocalDescription(answer);
+            })
+            .then(function () {
+                var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
+                localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
+                signalingChannel.send(wsLocalSdp);
+            })
+            .catch(logError);
         }
 
         function incoming(evt) {

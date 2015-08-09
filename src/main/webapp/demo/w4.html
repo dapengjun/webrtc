@@ -10,11 +10,18 @@
         var pc;
         var selfView;
         var remoteView;
+        var localSdpDiv;
+        var remoteSdpDiv;
+        var iceDiv;
+        var isCaller = true;
 
         function load()
         {
             selfView = document.getElementById("local");
             remoteView = document.getElementById("remote");
+            localSdpDiv = document.getElementById("localSdp");
+            remoteSdpDiv = document.getElementById("remoteSdp");
+            iceDiv = document.getElementById("ice");
 
             var btn = document.getElementById('run');
             btn.onclick = start;
@@ -25,7 +32,7 @@
         function startSignal()
         {
             var nickName = document.getElementById("nick");
-            signalingChannel = new WebSocket("ws://localhost:8080/ws/chat/"+nickName.value);
+            signalingChannel = new WebSocket("ws://192.168.1.101:8080/ws/chat/"+nickName.value);
             signalingChannel.onopen = function(){
                 console.log("WebSocketOpen!");
             };
@@ -42,22 +49,30 @@
 
         // call start() to initiate
         function start() {
-            var configuration = { "iceServers": [{ "url": "stun:192.168.56.101" }] };
+            var configuration = { "iceServers": [{ "url": "stun:192.168.1.102" }] };
             pc = new RTCPeerConnection(configuration);
 
             // send any ice candidates to the other peer
             pc.onicecandidate = function (evt) {
-                if (evt.candidate)
-                    signalingChannel.send(JSON.stringify({ "candidate": evt.candidate }));
+                if (evt.candidate) {
+                    iceDiv.innerText = iceDiv.innerText + JSON.stringify({ "candidate": evt.candidate });
+//                    signalingChannel.send(JSON.stringify({ "candidate": evt.candidate }));
+                    pc.addIceCandidate(evt.candidate).catch(logError);
+                }
             };
 
             // let the "negotiationneeded" event trigger offer generation
             pc.onnegotiationneeded = function () {
+                if (!isCaller)
+                {
+                    return;
+                }
                 pc.createOffer().then(function (offer) {
                     return pc.setLocalDescription(offer);
                 }).then(function () {
-                    // send the offer to the other peer
-                    signalingChannel.send(JSON.stringify({ "sdp": pc.localDescription }));
+                    var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
+                    localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
+                    signalingChannel.send(wsLocalSdp);
                 }).catch(logError);
             };
 
@@ -92,29 +107,37 @@
         }
 
         function incoming(evt) {
-            if (!pc)
+            if (!pc) {
+                isCaller = false;
                 start();
+            }
 
             var message = JSON.parse(evt.data);
             if (message.sdp) {
+                remoteSdpDiv.innerHTML = remoteSdpDiv.innerHTML + "<br/>" + evt.data;
                 var desc = new RTCSessionDescription(message.sdp);
 
                 // if we get an offer, we need to reply with an answer
                 if (desc.type == "offer") {
                     pc.setRemoteDescription(desc).then(function () {
-                        return pc.createAnswer();
-                    })
+                                return pc.createAnswer();
+                            })
                             .then(function (answer) {
                                 return pc.setLocalDescription(answer);
                             })
                             .then(function () {
-                                signalingChannel.send(JSON.stringify({ "sdp": pc.localDescription }));
+                                var wsLocalSdp = JSON.stringify({ "sdp": pc.localDescription });
+                                localSdpDiv.innerHTML = localSdpDiv.innerHTML + "<br/>" + wsLocalSdp;
+                                signalingChannel.send(wsLocalSdp);
                             })
                             .catch(logError);
-                } else
+                } else {
                     pc.setRemoteDescription(desc).catch(logError);
-            } else
-                pc.addIceCandidate(new RTCIceCandidate(message.candidate)).catch(logError);
+                }
+            } else {
+//                alert(evt.data);
+//                pc.addIceCandidate(new RTCIceCandidate(message.candidate)).catch(logError);
+            }
         };
 
         function logError(error) {
@@ -128,6 +151,9 @@
     <button id="start">startSignal</button>
     <button id="run">start</button><br/>
     <video id="remote"></video><br/>
-    <video id="local"></video>
+    <video id="local"></video><br/>
+    <div id="localSdp"></div><br/>
+    <div id="remoteSdp"></div><br/>
+    <div id="ice"></div>
 </body>
 </html>
